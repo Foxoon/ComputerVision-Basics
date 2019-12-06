@@ -1,0 +1,15 @@
+VC++Directories
+Include directories : 
+$(VC_IncludePath);$(WindowsSDK_IncludePath);opencv\build\include
+
+Libraries directories
+opencv\build\x64\vc15\bin;
+opencv\build\x64\vc15\lib;
+
+Linker->General->additional library
+opencv\build\x64\vc15\lib
+Linker->General->Use library dependency inputs->Inputs
+Yes
+
+Linker->input->additional dependencies
+opencv_world412d.lib
