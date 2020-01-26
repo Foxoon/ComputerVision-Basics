@@ -121,13 +121,13 @@ void show_histogram(map<uchar, int> &hist) {
 	Return the min and max value in grey of the image
 
 */
-void evalMinMax(const cv::Mat& image, uchar& vMin, uchar& vMax) {
+void evalMinMax(const cv::Mat& image, int& vMin, int& vMax) {
 	vMin = 255;
 	vMax = 0;
 
 	for (int i = 0; i < image.rows; i++) {
 		for (int j = 0; j < image.cols; j++) {
-			uchar oldValue = image.at<uchar>(i, j);
+			int oldValue = (int)image.at<uchar>(i, j);
 			if (oldValue < vMin) {
 				vMin = oldValue;
 			}
@@ -183,17 +183,17 @@ cv::Mat threshold(const cv::Mat& image, uchar value, bool high) {
 /**
 	Apply a combined threshold (low and high) which reduce the grey layers to 2
 */
-cv::Mat thresholdC(const cv::Mat& image, uchar value) {
+cv::Mat thresholdCombined (const cv::Mat& image, uchar value) {
 	cv::Mat res = image.clone();
 
 	for (int i = 0; i < image.rows; i++) {
 		for (int j = 0; j < image.cols; j++) {
 			uchar oldValue = res.at<uchar>(i, j);
-			if (oldValue > value) {
+			if (oldValue >= value) {
 				res.at<uchar>(i, j) = 255;
 			}
 
-			if (oldValue < value) {
+			else{
 				res.at<uchar>(i, j) = 0;
 			}
 		}
@@ -204,18 +204,21 @@ cv::Mat thresholdC(const cv::Mat& image, uchar value) {
 /**
 	Equalize the image uniformly with an affine function  
 */
-cv::Mat normalize(const cv::Mat& image, uchar fMin, uchar fMax){
+cv::Mat normalize(const cv::Mat& image, int newMin, int newMax){
 	
-	uchar vMin;
-	uchar vMax;
-	evalMinMax(image, vMin, vMax);
+	int hMin;
+	int hMax;
+	evalMinMax(image, hMin, hMax);
 
 	cv::Mat res = image.clone();
 
 	for (int i = 0; i < image.rows; i++) {
 		for (int j = 0; j < image.cols; j++) {
 			uchar oldValue = res.at<uchar>(i, j);
-			res.at<uchar>(i, j) = ((oldValue - fMin) * ((vMax - vMin) / (fMax - fMin))) + vMin;
+
+
+			uchar newValue = ( (int)oldValue - hMin) * ( (float)(newMax - newMin) / (float)(hMax - hMin) ) + newMin;
+			res.at<uchar>(i, j) = newValue;
 		}
 	}
 	return res;
@@ -255,8 +258,8 @@ cv::Mat quantize(const cv::Mat& image, int layers) {
 */
 cv::Mat equalize(const cv::Mat& image) {
 	
-	uchar vMin;
-	uchar vMax;
+	int vMin;
+	int vMax;
 	evalMinMax(image, vMin, vMax);
 
 	cv::Mat res = image.clone();
@@ -266,9 +269,11 @@ cv::Mat equalize(const cv::Mat& image) {
 	for (int i = 0; i < image.rows; i++) {
 		for (int j = 0; j < image.cols; j++) {
 			uchar oldValue = res.at<uchar>(i, j);
+			
 			int histValue = hist[oldValue];
+			float coef = (float)vMax / size;
 
-			uchar test = (vMax / size)*histValue + vMin;
+			uchar test = coef*histValue + vMin;
 			res.at<uchar>(i, j) = test;
 		}
 	}
@@ -276,10 +281,66 @@ cv::Mat equalize(const cv::Mat& image) {
 	return res;
 }
 
-cv::Mat thresholdOtsu(const cv::Mat& image) {
-	cv::Mat res = image.clone();
-	//TODO 
+float varianceBetweenClass(std::map<uchar, int> &hist , int& threshold) {
 
-	return res;
+	if (threshold > hist.size()) return 0;
+
+	float WBsum = 0;
+	float AverageB = 0;
+	
+	
+	map<uchar, int>::iterator it;
+	for (it = hist.begin(); it != hist.end(); ++it) {
+		WBsum += (float) it->second;
+		AverageB += (float)it->first * it->second;
+	}
+
+
+	float WFsum = 0;
+	float AverageF = 0;
+	it = hist.begin();
+
+	for (advance(it, threshold); it != hist.end(); ++it) {
+		WFsum += (float)it->second;
+		AverageF += (float)it->first * it->second;
+	}
+
+
+	int total = WBsum + WFsum;
+
+	float WB = WBsum / total;
+	float WF = WFsum / total;
+	AverageB /= WBsum;
+	AverageF /= WFsum;
+
+
+	float VarianceBetweenClass = WB * WF * pow((AverageB - AverageF),2);
+	
+	return VarianceBetweenClass;
 }
+
+// Automatic Threshold
+cv::Mat thresholdOtsu(const cv::Mat& image) {
+
+	cv::Mat res = image.clone();
+
+	map<uchar, int> h = histogram(image);
+
+	float max = 0;
+	uchar bestThreshold = 0;
+	
+	map<uchar, int>::iterator it;
+	for (it = h.begin(); it != h.end(); ++it) {
+		int threshold = (int)it->first;
+		float variance = varianceBetweenClass(h, threshold);
+
+		if (variance > max) {
+			max = variance;
+			bestThreshold = it->first;
+		}
+	}
+	return thresholdCombined(res, bestThreshold);
+
+}
+
 

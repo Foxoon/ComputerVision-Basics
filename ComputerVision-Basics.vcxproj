@@ -22,9 +22,9 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{97578AC1-F489-435F-8A21-069FDDCBAB79}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ConsoleOpenCVTry2</RootNamespace>
+    <RootNamespace>Image-Processing</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
-    <ProjectName>Computer Vision - Basics</ProjectName>
+    <ProjectName>Image-Processing</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -159,11 +159,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Classes\ConnectedComponent.h" />
+    <ClInclude Include="Classes\cPixel.h" />
     <ClInclude Include="Classes\Editing.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Classes\ConnectedComponent.cpp" />
+    <ClCompile Include="Classes\cPixel.cpp" />
     <ClCompile Include="Classes\Editing.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
