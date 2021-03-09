@@ -1,0 +1,352 @@
+#ifndef OEDITINGFUNCTIONS_H
+#define OEDITINGFUNCTIONS_H
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include "oUtilityFunctions.h"
+#include <algorithm>
+#include <map>
+#include <string>
+#include <iostream>
+#endif // OEDITINGFUNCTIONS_H
+
+cv::Mat inverse(const cv::Mat image);
+cv::Mat GTranspose(const cv::Mat image);
+cv::Mat flip(const  cv::Mat image);
+
+std::map<uchar, int> histogram(const cv::Mat& image);
+std::map<uchar, int> histogram_cumul(const cv::Mat& image);
+void show_histogram(std::map<uchar, int> &hist);
+void evalMinMax(const cv::Mat& image, int& vMin, int& vMax);
+cv::Mat expand(const cv::Mat &image);
+cv::Mat threshold(const cv::Mat& image, uchar value, bool high);
+cv::Mat thresholdCombined (const cv::Mat& image, uchar value);
+cv::Mat normalize(const cv::Mat& image, int newMin, int newMax);
+cv::Mat quantize(const cv::Mat& image, int layers);
+cv::Mat equalize(const cv::Mat& image);
+float varianceBetweenClass(std::map<uchar, int> &hist , int& threshold);
+cv::Mat thresholdOtsu(const cv::Mat& image);
+
+
+
+/** conversion
+    CV_8U->Format_Indexed8
+    CV_8UC3->Format_RGB888
+    CV_8UC4->Format_ARGB32
+*/
+
+cv::Mat inverse(const cv::Mat image) {
+    cv::Mat res = image.clone();
+
+    for (int i = 0; i < res.rows; i++) {
+        for (int j = 0; j < res.cols; j++) {
+            uchar intensity = image.at<uchar>(i, j);
+            res.at<uchar>(i, j) = 1.0 - intensity;
+        }
+    }
+    return res;
+}
+
+cv::Mat GTranspose(const cv::Mat image) {
+    cv::Mat res = image.clone();
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            res.at<uchar>(i, j) = image.at<uchar>(j, i);
+        }
+    }
+    return res;
+}
+
+/**
+    Flip the image
+    @todo
+*/
+cv::Mat flip(const cv::Mat image) {
+    cv::Mat res = image.clone();
+
+    return res;
+}
+
+std::map<uchar, int> histogram(const cv::Mat& image) {
+    std::map<uchar, int> m;
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            uchar value = image.at<uchar>(i, j);
+            if (m.find(value) != m.end()) {
+                ++m[value];
+            }
+            else {
+                m[value] = 1;
+            }
+        }
+    }
+    return m;
+
+}
+
+
+std::map<uchar, int> histogram_cumul(const cv::Mat& image) {
+    std::map<uchar, int> m = histogram(image);
+
+    int count = 0;
+
+    std::map<uchar, int>::iterator it;
+    for (it = m.begin(); it != m.end(); ++it) {
+        count += it->second;
+        it->second = count;
+    }
+
+
+    return m;
+
+}
+
+void show_histogram(std::map<uchar, int> &hist) {
+    std::map<uchar, int>::iterator it;
+    std::string str = "Histogram : ----------------------- \n ________________________________\n";
+    double count = 0;
+    for (it = hist.begin(); it != hist.end(); ++it) {
+        str += "|" + std::to_string(it->first);
+        str += "|" + std::to_string(it->second);
+        str += "|\n";
+        count +=  it->second;
+    }
+    str += " Pixels in the image = " + std::to_string(count);
+    str +="\n";
+    std::cout << str << std::endl;
+}
+
+
+/**
+    Return the min and max value in grey of the image
+
+*/
+void evalMinMax(const cv::Mat& image, int& vMin, int& vMax) {
+    vMin = 255;
+    vMax = 0;
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            int oldValue = (int)image.at<uchar>(i, j);
+            if (oldValue < vMin) {
+                vMin = oldValue;
+            }
+            if (oldValue > vMax) {
+                vMax = oldValue;
+            }
+        }
+    }
+}
+
+/**
+    Double the image resolution using the given interpolation method.
+    If the input size is (h,w) the output size shall be (h*2-1, w*2-1)
+    @todo
+*/
+cv::Mat expand(const cv::Mat &image) {
+    cv::Mat res = cv::Mat::zeros(cv::Size(image.rows * 2 - 1, image.cols * 2 - 1), image.type());
+    for (int i = 0; i < res.rows; ++i) {
+        for (int j = 0; j < res.cols; j += 2) {
+            res.at<uchar>(i, j) = image.at<uchar>(i / 2, j / 2);
+            res.at<uchar>(i, j + 1) = interpolate_bilinear(image, i / 2, j / 2);
+        }
+    }
+    return res;
+}
+/**
+    Apply a threshold filter with a value
+    The last parameter determine if its a low or high threshold
+*/
+cv::Mat threshold(const cv::Mat& image, uchar value, bool high) {
+    cv::Mat res = image.clone();
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            uchar oldValue = res.at<uchar>(i, j);
+            if (high) {
+                if (oldValue > value) {
+                    res.at<uchar>(i, j) = 255;
+                }
+            }
+            else {
+                if (oldValue < value) {
+                    res.at<uchar>(i, j) = 0;
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+
+/**
+    Apply a combined threshold (low and high) which reduces the grey layers to 2
+*/
+cv::Mat thresholdCombined (const cv::Mat& image, uchar value) {
+    cv::Mat res = image.clone();
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            uchar oldValue = res.at<uchar>(i, j);
+            if (oldValue >= value) {
+                res.at<uchar>(i, j) = 255;
+            }
+
+            else{
+                res.at<uchar>(i, j) = 0;
+            }
+        }
+    }
+    return res;
+}
+
+/**
+    Equalize the image uniformly with an affine function
+    Reduce details but makes the image smoother
+*/
+cv::Mat normalize(const cv::Mat& image, int newMin, int newMax){
+
+    int hMin;
+    int hMax;
+    evalMinMax(image, hMin, hMax);
+
+    cv::Mat res = image.clone();
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            uchar oldValue = res.at<uchar>(i, j);
+
+
+            uchar newValue = ( (int)oldValue - hMin) * ( (float)(newMax - newMin) / (float)(hMax - hMin) ) + newMin;
+            res.at<uchar>(i, j) = newValue;
+        }
+    }
+    return res;
+}
+
+/**
+    Reduce the grey layers in the image to x
+    Add details, Reduce smoothness
+*/
+cv::Mat quantize(const cv::Mat& image, int layers) {
+    cv::Mat res = image.clone();
+
+    uchar unit = floor(255 / layers);
+
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            uchar oldValue = res.at<uchar>(i, j);
+            uchar interval = floor(oldValue / unit);
+
+            res.at<uchar>(i, j) = unit * interval+floor(unit/2);
+
+            //better render by giving extreme value to min and max
+            if (interval == 0) {
+                res.at<uchar>(i, j) = 0;
+            }
+            else if (interval == layers-1) {
+                res.at<uchar>(i, j) = 255;
+            }
+        }
+    }
+
+
+    return res;
+}
+
+/**
+    Equalize the image with a cumulated histogram technique
+    Weird output
+    @todo
+*/
+cv::Mat equalize(const cv::Mat& image) {
+
+    int vMin;
+    int vMax;
+    evalMinMax(image, vMin, vMax);
+
+    cv::Mat res = image.clone();
+    std::map<uchar, int> hist = histogram_cumul(image);
+
+    int size = image.rows*image.cols;
+    for (int i = 0; i < image.rows; i++) {
+        for (int j = 0; j < image.cols; j++) {
+            uchar oldValue = res.at<uchar>(i, j);
+
+            int histValue = hist[oldValue];
+            float coef = (float)vMax / size;
+
+            uchar test = coef*histValue + vMin;
+            res.at<uchar>(i, j) = test;
+        }
+    }
+
+    return res;
+}
+
+float varianceBetweenClass(std::map<uchar, int> &hist , int& threshold) {
+
+    if (threshold > hist.size()) return 0;
+
+    float WBsum = 0;
+    float AverageB = 0;
+
+
+    std::map<uchar, int>::iterator it;
+    for (it = hist.begin(); it != hist.end(); ++it) {
+        WBsum += (float) it->second;
+        AverageB += (float)it->first * it->second;
+    }
+
+
+    float WFsum = 0;
+    float AverageF = 0;
+    it = hist.begin();
+
+    for (advance(it, threshold); it != hist.end(); ++it) {
+        WFsum += (float)it->second;
+        AverageF += (float)it->first * it->second;
+    }
+
+
+    int total = WBsum + WFsum;
+
+    float WB = WBsum / total;
+    float WF = WFsum / total;
+    AverageB /= WBsum;
+    AverageF /= WFsum;
+
+
+    float VarianceBetweenClass = WB * WF * pow((AverageB - AverageF),2);
+
+    return VarianceBetweenClass;
+}
+
+/**
+    Automatic Threshold
+*/
+cv::Mat thresholdOtsu(const cv::Mat& image) {
+
+    cv::Mat res = image.clone();
+
+    std::map<uchar, int> h = histogram(image);
+
+    float max = 0;
+    uchar bestThreshold = 0;
+
+    std::map<uchar, int>::iterator it;
+    for (it = h.begin(); it != h.end(); ++it) {
+        int threshold = (int)it->first;
+        float variance = varianceBetweenClass(h, threshold);
+
+        if (variance > max) {
+            max = variance;
+            bestThreshold = it->first;
+        }
+    }
+    return thresholdCombined(res, bestThreshold);
+
+}

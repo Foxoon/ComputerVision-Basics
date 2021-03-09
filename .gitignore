@@ -1,71 +1,73 @@
-#packages
-packages/
+# This file is used to ignore files which are generated
+# ----------------------------------------------------------------------------
 
-#User specific files
-*.rsuser
-*.suo
-
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-
-# Visual Studio 2015/2017 cache/options directory
-.vs/
-
-
-# Files built by Visual Studio
-*_i.c
-*_p.c
-*_h.h
-*.ilk
-*.meta
+*~
+*.autosave
+*.a
+*.core
+*.moc
+*.o
 *.obj
-*.iobj
-*.pch
+*.orig
+*.rej
+*.so
+*.so.*
+*_pch.h.cpp
+*_resource.rc
+*.qm
+.#*
+*.*#
+core
+!core/
+tags
+.DS_Store
+.directory
+*.debug
+Makefile*
+*.prl
+*.app
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+Thumbs.db
+*.res
+*.rc
+/.qmake.cache
+/.qmake.stash
+
+# qtcreator generated files
+*.pro.user*
+
+# xemacs temporary files
+*.flc
+
+# Vim temporary files
+.*.swp
+
+# Visual Studio generated files
+*.ib_pdb_index
+*.idb
+*.ilk
 *.pdb
-*.ipdb
-*.pgc
-*.pgd
-*.rsp
-*.sbr
-*.tlb
-*.tli
-*.tlh
-*.tmp
-*.tmp_proj
-*_wpftmp.csproj
-*.log
-*.vspscc
-*.vssscc
-.builds
-*.pidb
-*.svclog
-*.scc
-
-# Visual C++ cache files
-ipch/
-*.aps
+*.sln
+*.suo
+*.vcproj
+*vcproj.*.*.user
 *.ncb
-*.opendb
-*.opensdf
 *.sdf
-*.cachefile
-*.VC.db
-*.VC.VC.opendb
+*.opensdf
+*.vcxproj
+*vcxproj.*
 
-# Visual Studio profiler
-*.psess
-*.vsp
-*.vspx
-*.sap
+# MinGW generated files
+*.Debug
+*.Release
+
+# Python byte code
+*.pyc
+
+# Binaries
+# --------
+*.dll
+*.exe
+
