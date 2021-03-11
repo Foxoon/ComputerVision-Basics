@@ -32,24 +32,24 @@ cv::Mat convolution(cv::Mat image, cv::Mat kernel)
     cout << "kernel rows=" << kernel.rows<< endl;
     */
 
-    for(int i = 0; i<image.rows; i++){
-        for(int j = 0; j<image.cols; j++){
+    for(int y = 0; y<image.rows; y++){
+        for(int x = 0; x<image.cols; x++){
 
             float pixelValue = 0;
 
             for( int fx = 0; fx<size; fx++){
                 for(int fy= 0; fy<size; fy++){
 
-                    if(  ( (i+fx)>image.rows ) | ( (j+fy)>image.cols ) ){
+                    if(  ( (y+fx)>image.rows ) | ( (x+fy)>image.cols ) ){
                         pixelValue += 0;
                     }
 
                     else{
-                        pixelValue+= image.at<float>((i+fx),(j+fy)) *  kernel.at<float>(fx,fy) ;
+                        pixelValue+= image.at<float>((y+fx),(x+fy)) *  kernel.at<float>(fx,fy) ;
                     }
                 }
             }
-            res.at<float>(i,j) = pixelValue;
+            res.at<float>(y,x) = pixelValue;
 
         }
     }

@@ -8,18 +8,13 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-
-
-    cv::Mat img = cv::imread("D://lena.jpg", false);
+    cv::Mat img = cv::imread("D://0-WORK/0-Programming/QT/Image-Processing/Ressources/lena.jpg", false);
 
     //original image
-    ui->originalImage->setPixmap(QPixmap("D://lena.jpg"));
-    /*
-    cv::Mat lowImg = thresholdOtsu(img);
-    QImage qimgg((uchar*)lowImg.data, lowImg.cols, lowImg.rows, lowImg.step, QImage::Format_Indexed8);
-    ui->originalImage->setPixmap(QPixmap::fromImage(qimgg));
-    */
+    ui->originalImage->setPixmap(QPixmap("D://0-WORK/0-Programming/QT/Image-Processing/Ressources/lena.jpg"));
+
+
+
     uchar kdata[] = {0, 1, 0,1, 1, 1, 0, 1, 0};
     cv::Mat kernel(3,3,CV_8U, kdata);
     cv::Mat inversedImg = convolution(img, kernel);
